@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+</head>
+<body>
+<script>
+	window.onload = init;
+	var context;
+	var bufferLoader;
+
+	function init(){
+		context = new webkitAudioContext();
+
+		bufferLoader = new BufferLoader(
+				context,
+				[
+					'../sounds/hyper-reality/br-jam-loop.mp3',
+					'../sounds/hyper-reality/laughter.mp3'
+				],
+				finishedLoading
+			);
+		bufferLoader.load();
+	}
+
+	function finishedLoading(bufferList){
+		// Create two sources and play them both together.
+ 		var source1 = context.createBufferSource();
+ 		var source2 = context.createBufferSource();
+ 		source1.buffer = bufferList[0];
+ 		source2.buffer = bufferList[1];
+
+ 		source1.start(0);
+ 		source2.start(0);
+
+	}
+</script>	
+</body>
+</html>

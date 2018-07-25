@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+</head>
+<body>
+<script>
+	/**
+	 * 1.AudioContext对象
+     *  AudioContext是一个专门用于音频处理的接口，
+     *  并且原理是讲AudioContext创建出来的各种节点（AudioNode）相互连接，
+     *  音频数据流经这些节点并作出相应处理。
+	 */
+	
+	// 创建AudioContext对象
+	var audioContext = new AudioContext();
+	// 兼容模式
+	window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.oAudioContext || window.msAudioContext;
+
+	 //处理错误
+	try{
+		var audioContext = new window.AudioContext();
+	}catch(e){
+		console.log(e);
+	} 
+
+	// 解码音频文件
+	/**
+	 * audioContext.decodeAudioData(binary, function(buffer) { ... });
+	 * 读取到的音频文件时2进制文件（可以使用Ajax远程加载，
+	 * 可以使用FileAPI读取本地文件），
+	 * 我们需要让AudioContext先对其解码，
+	 * 然后再进行后续擦做。
+	 * 返回结果的buffer为AudioBuffer类型数据。
+	 */
+	// 2.AudioBuffer对象
+	// length:文件大小
+	// duration:音频长度
+	
+
+	// 3.创建音频处理节点
+	// AudioBufferSourceNode对象
+	var source = audioContext.createBufferSource();
+
+	// 链接节点：
+	//创建AudioBufferSourceNode对象
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+
+
+    // AnalyserNode对象（分析器）
+    var analyser = audioContext.createAnalyser();
+
+    source.connect(analyser);
+
+    analyser.connect(audioContext.destination);
+
+    // 播放/暂停
+    source.start(0);
+    source.stop();
+</script>	
+</body>
+</html>

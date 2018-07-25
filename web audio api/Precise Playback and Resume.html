@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+</head>
+<body>
+<script>
+	// 假设上下文是一个web音频上下文，缓冲区是一个预先加载的音频缓冲区。
+	var startOffset = 0;
+	var startTime = 0;
+	function pause(){
+		source.stop();
+		// 测量自上次停顿以来经过的时间。
+		startOffset += context.currentTime - startTime;
+	}
+
+	// 一旦一个源节点完成了回放，它就不能再回放了。打回
+
+// 再次，您需要创建一个新的源节点(AudioBufferSource)。节点)和调用start():
+
+	function play(){
+		startTime = context.currentTime;
+		var source = context.createBufferSource();
+		source.buffer = this.buffer;
+		source.loop = true;
+		source.connect(context.destination);
+		// 开始播放，但要确保我们停留在缓冲区的边界
+		source.start(0,startOffset % buffer.duration);
+	}
+</script>	
+</body>
+</html>
