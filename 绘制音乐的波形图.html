@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+	<script>
+
+		var songs=[];
+	    var curIndex=0;
+	    function initSongs(res) {
+	        songs=res.songs;
+	    }
+	</script>
+	<script src="http://api.asilu.com/163music/?type=playlist&id=545888750&callback=initSongs&_=1494217574015"></script>
+	<style>
+		canvas{
+			background-color: black;
+		}
+	</style>
+</head>
+<body>
+<canvas id='canvas' width=400 height='100'></canvas>
+<audio id="audio" autoplay="true"></audio>
+
+<input type="button" value='播放' id='play'/>
+<input type="button" value='暂停' id='stop'/>
+<script>
+	// AudioAPI有个ScriptProcessor节点，提供了audioprocessor事件可以用来读取波形音频数据
+	// 有了这些数据就可以在canvas上把他的波形绘制出来了，另外还要注意同源的关系，如果音频是跨域引用的就无法通过这个方式读取数据
+	
+	var id = function(id){
+		return document.getElementById(id);
+	}
+
+	var oPlay = id('play');
+	var oStop = id('stop');
+
+	var au = id('audio');
+
+	au.src = 'audio/Battle Without Honor Or Humanity.mp3';
+
+
+	// canvas浏览器兼容测试
+	var canvas = id('canvas');
+
+	var width = canvas.width;
+	var height = canvas.height;
+
+	var ctx = canvas.getContext('2d');
+
+	ctx.translate(0.5,height/2+0.5);
+
+	function supportCanvas(){
+		return !!(canvas && canvas.getContext);
+	}
+
+	// 封装console.log()
+	// 避免有些浏览器不支持console.log()
+	// 报错
+	var Debugger = (function(){
+		var log = function(message){
+			try{
+				console.log(message);
+			}catch(e){
+				return ;
+			}
+		};
+
+		return {
+			log:log
+		}
+	})();
+
+
+	Debugger.log(supportCanvas());
+
+	
+	// 播放
+	oPlay.onclick = function(){
+		au.play();
+	}
+
+	// 暂停
+	oStop.onclick = function(){
+		au.pause();
+	}
+
+	var AudioContext = AudioContext || webkitAudioContext;
+	var context = new AudioContext();
+	// console.log(context);
+	// console.log(context.destination);
+	// console.log(context.currentTime);
+
+
+	// 创建媒体节点
+	var media = context.createMediaElementSource(au);
+	// console.log(media);
+	// console.log(media.channelCount);
+	// console.log(media.context);
+	// console.log(media.channelCountMode);
+
+	// 创建脚本处里节点
+	var processor = context.createScriptProcessor(4096,1,1);
+	console.log(processor);
+	console.log(processor.bufferSize);
+	console.log(processor.channelCountMode);
+	console.log(processor.channelInterpretation);
+	console.log(processor.numberOfInputs);
+	console.log(processor.numberOfOutputs);
+	//连接：媒体节点→控制节点→输出源
+	media.connect(processor);
+	processor.connect(context.destination);
+
+	// 控制节点的过程处理
+	processor.onaudioprocess = function(e){
+		// console.log(e);
+		// console.log(e.playbackTime);
+		// 获取输入输出的数据缓冲区
+		var input = e.inputBuffer.getChannelData(0);
+		// console.log(e.inputBuffer);
+		// console.log(input);//4096个元素
+
+		var output = e.outputBuffer.getChannelData(0);
+		// 将输入数据缓冲复制到输出缓存上
+		for(var i=0;i<input.length;i++){
+			output[i] = input[i];
+		}
+
+		// 将缓冲区的数据绘制到canvas上
+		ctx.clearRect(-0.5,-height/2-0.5,width,height);
+
+		ctx.beginPath();
+		ctx.strokeStyle = 'red';
+		for(var i=0;i<width;i++){
+			ctx.lineTo(i,height/2*output[Math.round(output.length*i/width)]);
+			// output.length*i/width|0
+			// Math.floor(output.length*i/width)
+			// output.length*i/width&0
+			// Math.ceil(output.length*i/width)
+			// Math.round(output.length*i/width)
+		}
+		ctx.stroke();
+
+		ctx.closePath();
+	}
+
+	
+</script>	
+</body>
+</html>

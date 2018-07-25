@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.2.0/css/bootstrap.css">
+	<style>
+	    #volumeSlider .slider-selection {
+	        background:#bababa;
+	    }
+	</style>
+	<script src="jquery-1.8.0.js"></script>
+	<script src="https://cdn.bootcss.com/bootstrap/3.2.0/js/bootstrap.js"></script>
+	
+</head>
+<body>
+
+<div class="container">
+    <p>/audio/海阔天空.mp3</p>
+    <button class="btn btn-primary" id="playBtn">
+        播放
+    </button>
+    <button class="btn btn-info" id="mutedBtn">
+        静音 
+    </button>
+    <div class="form-group">
+        <label class="control-label">音量：</label>
+        <input class="form-control" id="volume" data-slider-id="volumeSlider" data-slider-min="0" data-slider-max="100" data-slider-step="1"/>
+    </div>
+    <div class="form-group">
+        <label class="control-label">进度：</label>
+        <input class="form-control" id="timeBtn" data-slider-id="volumeSlider" data-slider-min="0" data-slider-step="0.01" />
+    </div>
+</div>
+<audio id="myAudio"></audio>
+
+<script>
+Date.prototype.Format = function (fmt) { //author: meizz 
+    var o = {
+        "M+": this.getMonth() + 1, //月份 
+        "d+": this.getDate(), //日 
+        "h+": this.getHours(), //小时 
+        "m+": this.getMinutes(), //分 
+        "s+": this.getSeconds(), //秒 
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+        "S": this.getMilliseconds() //毫秒 
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+}
+	var currentFile = 'audio/海阔天空.mp3';
+//判断浏览器是否支持audio
+if (!window.HTMLAudioElement) {
+    alert('您的浏览器不支持audio标签');
+} else {
+    var myAudio = document.getElementById('myAudio');
+    myAudio.autoplay = false;
+    myAudio.preload = false;
+    if (myAudio.src.length <= 0) {
+        myAudio.src = currentFile;
+    }
+    //播放/暂停按钮
+    $('#playBtn').click(function () {
+        if (myAudio.paused) {
+            myAudio.play();
+        } else {
+            myAudio.pause();
+        }
+    });
+    //静音按钮
+    $('#mutedBtn').click(function () {
+        myAudio.muted = !myAudio.muted;
+    });
+    //音量按钮
+    $('#volume').slider({
+        value: myAudio.volume * 100
+    }).on('change', function (e) {
+    	console.log(e);
+    	console.log(myAudio);
+        var value = e.value.newValue / 100;
+        myAudio.volume = value;
+    });
+    //播放进度按钮
+    $('#timeBtn').slider({
+        value: 0,
+        tooltip: 'always',
+        formatter: function (value) {
+            var date = new Date(0, 0, 0, 0, 0, value);
+            return '当前时间：' + date.Format('mm:ss');
+        }
+    }).on('change', function (e) {
+        var value = e.value.newValue;
+        myAudio.currentTime = value;
+        myAudio.play();
+    });
+    //进入可播放状态
+    myAudio.oncanplay = function () {
+        console.info('进入可播放状态,音频总长度:' + myAudio.duration);
+        $('#timeBtn').slider('setAttribute', 'max', myAudio.duration);
+    }
+    myAudio.onplay = function () {
+        console.info('开始播放：' + myAudio.currentTime);
+    }
+    myAudio.onpause = function () {
+        console.info('暂停播放：' + myAudio.currentTime);
+    }
+    myAudio.ontimeupdate = function (e) {
+        $('#timeBtn').slider('setValue', myAudio.currentTime);
+    }
+    //此事件和onplay好像一直
+    myAudio.onplaying = function () {
+        console.info('正在播放：' + myAudio.currentTime);
+    }
+    //此事件和oncanplay 好像一直
+    myAudio.onloadedmetadata = function () {
+        console.info('文件加载成功:' + myAudio.duration);
+    }
+}
+</script>	
+</body>
+</html>

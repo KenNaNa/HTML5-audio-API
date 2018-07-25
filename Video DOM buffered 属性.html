@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+</head>
+<body>
+<audio id='audio' src=></audio>	
+<script>
+	var audio = document.getElementById('audio');
+	audio.preload = true;
+    audio.autoplay = true;
+    audio.src = 'audio/海阔天空.mp3';
+	audio.onplay = function(){
+		console.log('播放');
+	}
+
+	audio.oncanplay = function(){
+		console.log('进入可播放状态');
+		console.log('总长度:'+audio.duration);
+	}
+
+	audio.ontimeupdate = function(){
+		console.log("Start: " + audio.buffered.start(0));
+		console.log(" End: " + audio.buffered.end(0))
+		console.log(audio.buffered);
+	}
+	// TimeRanges 对象表示用户的音视频缓冲范围。
+
+// 缓冲范围指的是已缓冲音视频的时间范围。如果用户在音视频中跳跃播放，会得到多个缓冲范围。
+</script>
+</body>
+</html>

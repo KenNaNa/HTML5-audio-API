@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+	<style>
+		canvas{
+			background-color: black;
+		}
+	</style>
+</head>
+<body>
+<canvas id='canvas' width="800" height="300">
+	您的浏览器不支持canvas标签
+</canvas>
+<br/>
+<button type="button" id='button'>播放</button>	
+
+<script>
+	var id = function(id_str){
+		return document.getElementById(id_str);
+	}
+
+
+	// 判断是否支持canvas标签
+	var supportCanvas = function(){
+		var canvas = id('canvas');
+		return !!(canvas && canvas.getContext);
+	}
+
+	//判断是否存在AudioContext
+	var supportAudioContext = function(){
+		return !!(AudioContext);
+	}
+
+	// ajax兼容对象
+	var XMLHttpRequest = (function(){
+		if(window.XMLHttpRequest){
+			// IE7+ chrome firefox
+			XMLHttpRequest = window.XMLHttpRequest;
+		}else{
+			// IE56
+			XMLHttpRequest = window.ActiveXObject;
+		}
+
+		return XMLHttpRequest;
+	})();
+
+	// 封装console.log()
+	var Debugger = (function(){
+		var log = function(m){
+			try{
+				console.log(m);
+			}catch(e){
+				return ;
+			}
+		}
+
+		return {
+			log: log
+		}
+	})();
+
+	//获取歌曲路径
+	//
+	var songUrl = 'audio/wands - 直到世界的尽头 - 世界が终わるまでは.mp3';
+
+	if(supportAudioContext()){
+		console.log(1)
+		// 处理兼容性
+		var AudioContext = (
+				window.AudioContext ||
+				window.webkitAudioContext ||
+				window.mozAudioContext ||
+				window.oAudioContext ||
+				window.msAudioContext
+			);
+
+		// 创建音频上下文
+		// context
+		var context = new AudioContext();
+
+
+		// 创建source声源
+		var source = null;
+
+
+		// 创建ajax对象
+		var xhr = new XMLHttpRequest();
+		// console.log(xhr);
+
+
+		// 打开连接
+		xhr.open('GET',songUrl,true);
+
+
+		// 设置请求类型
+		xhr.responseType = 'arraybuffer';
+
+		// 加载
+		xhr.onload = function(){
+			console.log(2)
+
+			var arraybuffer = xhr.response;
+
+			context.decodeAudioData(arraybuffer,function(buffer){
+				console.log(buffer)
+				//创建声源
+				source = context.createBufferSource();
+
+
+				// 创建分析器
+				var analyser = context.createAnalyser();
+
+				console.log(analyser)
+				// source连接analyser
+				source.connect(analyser);
+
+				// analyser连接目的地
+				analyser.connect(context.destination);
+
+				// 将获取的buffer复制给source.buffer
+				source.buffer = buffer;
+
+				// 播放
+				source.start(0);
+
+				// 设置是否循环
+				source.loop = true;
+
+
+				// drawShaper();
+				// 开始绘画
+				var canvas = id('canvas');
+				var ctx = canvas.getContext('2d');
+				var cW = canvas.width;
+				var cH = canvas.height - 2;
+				var mW = 10;//条形图的宽度
+				var gap = 2;//条形图与条形图之间的间隔
+				var mN = (cW / (mW + gap));//计算出整个画布能画多少条条形图
+
+				var capH = 2;//帽的高度
+
+				
+
+				var capStyle = '#fff';//冒头的颜色
+                var capYPositionArray = [];//将上一面各个冒头的位置保存到这个数组
+				
+
+
+				
+
+				// 定义一个线性渐变色
+				var gradient = ctx.createLinearGradient(0,0,0,300);
+
+				gradient.addColorStop(1,'#0f0');
+				gradient.addColorStop(0.5,'#ff0');
+				gradient.addColorStop(0,'#f00');
+
+				function drawShaper(){
+
+					// 创建数组
+					var array = new Uint8Array(analyser.frequencyBinCount);
+					// console.log(array);
+					
+					// 获取到频率值
+					analyser.getByteFrequencyData(array);
+
+					// 对数组进行采样
+					var step = Math.round(array.length / mN);
+					
+					// 清除画布
+					ctx.clearRect(0,0,cW,cH);
+
+					//对信源数组进行抽样遍历，画出每个频谱条
+					for(var i=0; i<mN; i++){
+						var value = array[i * step]; //取样作为y轴的值
+						//绘制缓慢降落的冒头
+						if(capYPositionArray.length < Math.round(mN)){
+							capYPositionArray.push(value);//初始化保存冒头位置的数组，将第一个画面位置保存
+						}
+						ctx.fillStyle = capStyle;//初始化触笔颜色
+
+						 //1.开始绘制冒头
+						 if(value < capYPositionArray[i]){
+						 	// console.log(capYPositionArray[i])
+						 	//使用前一次数据
+						 	ctx.fillRect(i * 12, cH - (--capYPositionArray[i]), mW, capH);
+						 }else{
+						 	//否则，直接使用当前数据并记录
+						 	ctx.fillRect(i * 12, cH - value, mW, capH);
+                        	capYPositionArray[i] = value;
+						 }
+						 //2.开始绘制频谱条
+						 ctx.fillStyle = gradient;
+                         ctx.fillRect(i * 12/*频谱条的宽度+条间距*/, cH - value + capH, mW, cH);
+					}
+					// console.log(capYPositionArray)
+					// 执行动画
+					requestAnimationFrame(drawShaper);
+
+				}
+
+				requestAnimationFrame(drawShaper);
+			},function(e){
+				Debugger.log(e);
+			})
+
+		}
+
+		xhr.setRequestHeader('Access-Control-Allow-Origin','*');
+		xhr.send(null);
+
+		var flag = true;
+		id('button').onclick = function(){
+			if(flag){
+				setTimeout(function(){
+					source.stop();
+				},2000);
+				flag = false;
+			}else{
+				setTimeout(function(){
+					source.start(0);
+				},2000);
+
+				flag = true;
+			}
+		}
+	}
+	
+
+
+</script>	
+</body>
+</html>

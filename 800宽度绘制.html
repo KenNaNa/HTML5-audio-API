@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+	<style>
+		canvas{
+			background-color: black;
+		}
+	</style>
+</head>
+<body>
+<canvas id='canvas' width="800" height="300">
+	您的浏览器不支持canvas标签
+</canvas>
+<br/>
+<button type="button" id='button'>播放</button>	
+
+<script>
+	var id = function(id_str){
+		return document.getElementById(id_str);
+	}
+
+
+	// 判断是否支持canvas标签
+	var supportCanvas = function(){
+		var canvas = id('canvas');
+		return !!(canvas && canvas.getContext);
+	}
+
+	//判断是否存在AudioContext
+	var supportAudioContext = function(){
+		return !!(AudioContext);
+	}
+
+	// ajax兼容对象
+	var XMLHttpRequest = (function(){
+		if(window.XMLHttpRequest){
+			// IE7+ chrome firefox
+			XMLHttpRequest = window.XMLHttpRequest;
+		}else{
+			// IE56
+			XMLHttpRequest = window.ActiveXObject;
+		}
+
+		return XMLHttpRequest;
+	})();
+
+	// 封装console.log()
+	var Debugger = (function(){
+		var log = function(m){
+			try{
+				console.log(m);
+			}catch(e){
+				return ;
+			}
+		}
+
+		return {
+			log: log
+		}
+	})();
+
+	//获取歌曲路径
+	//
+	var songUrl = 'audio/wands - 直到世界的尽头 - 世界が终わるまでは.mp3';
+	var number = 0;
+
+	if(supportAudioContext()){
+		console.log(1)
+		// 处理兼容性
+		var AudioContext = (
+				window.AudioContext ||
+				window.webkitAudioContext ||
+				window.mozAudioContext ||
+				window.oAudioContext ||
+				window.msAudioContext
+			);
+
+		// 创建音频上下文
+		// context
+		var context = new AudioContext();
+
+
+		// 创建source声源
+		var source = null;
+
+
+		// 创建ajax对象
+		var xhr = new XMLHttpRequest();
+		// console.log(xhr);
+
+
+		// 打开连接
+		xhr.open('GET',songUrl,true);
+
+
+		// 设置请求类型
+		xhr.responseType = 'arraybuffer';
+
+		// 加载
+		xhr.onload = function(){
+			console.log(2)
+
+			var arraybuffer = xhr.response;
+
+			context.decodeAudioData(arraybuffer,function(buffer){
+				console.log(buffer)
+				//创建声源
+				source = context.createBufferSource();
+
+
+				// 创建分析器
+				var analyser = context.createAnalyser();
+
+				console.log(analyser)
+				// source连接analyser
+				source.connect(analyser);
+
+				// analyser连接目的地
+				analyser.connect(context.destination);
+
+				// 将获取的buffer复制给source.buffer
+				source.buffer = buffer;
+
+				// 播放
+				source.start(0);
+
+				// 设置是否循环
+				source.loop = true;
+
+
+				// drawShaper();
+				// 开始绘画
+				var canvas = id('canvas');
+				var ctx = canvas.getContext('2d');
+				var cW = canvas.width;
+				var cH = canvas.height - 2;
+				
+
+
+				
+
+				// 定义一个线性渐变色
+				var gradient = ctx.createLinearGradient(0,0,0,300);
+
+				gradient.addColorStop(1,'#0f0');
+				gradient.addColorStop(0.5,'#ff0');
+				gradient.addColorStop(0,'#f00');
+
+				function drawShaper(){
+
+					// 创建数组
+					var array = new Uint8Array(analyser.frequencyBinCount);
+					// console.log(array);
+					
+					// 获取到频率值
+					analyser.getByteFrequencyData(array);
+
+					
+					// 清除画布
+					ctx.clearRect(0,0,cW,cH);
+					number++;
+					// Debugger.log(number);
+
+
+					if(number>1000 && number<1003){
+						Debugger.log(array);
+					}
+
+					if(array[1020]>0){
+						Debugger.log(array);
+					}
+
+					for (var i = 0; i < array.length; i++) {
+	                    var value = array[i];
+	                    ctx.fillStyle = gradient;
+	                    ctx.fillRect(i, cH - value, 1, cH);
+	                }
+
+
+					requestAnimationFrame(drawShaper);
+
+				}
+
+				requestAnimationFrame(drawShaper);
+			},function(e){
+				Debugger.log(e);
+			})
+
+		}
+
+		xhr.setRequestHeader('Access-Control-Allow-Origin','*');
+		xhr.send(null);
+
+		var flag = true;
+		id('button').onclick = function(){
+			if(flag){
+				setTimeout(function(){
+					source.stop();
+				},2000);
+				flag = false;
+			}else{
+				setTimeout(function(){
+					source.start(0);
+				},2000);
+
+				flag = true;
+			}
+		}
+	}
+	
+
+
+</script>	
+</body>
+</html>

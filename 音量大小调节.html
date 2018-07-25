@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="">
+	<style>
+		#slide{
+			position: relative;
+			top: 10px;
+			left: 0;
+			width: 300px;
+			height: 16px;
+			border-radius: 16px;
+			background-color: #ddd;
+		}
+		#dot{
+			position: absolute;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			left: 0px;
+			top: -16px;
+			background-color: #000;
+		}
+		#slide.green_all{
+			background-color: green;
+		}
+		#slide.blue_half{
+			background-color: blue;
+		}
+	</style>
+</head>
+<body>
+<audio id='audio'></audio>
+<input type="button" id='play' value='播放'/>
+<input type="button" id='stop' value='静音'/>
+<div id='slide'>
+	<p id='dot'></p>
+</div>
+<script>
+	var $id = function(id){
+		return document.getElementById(id);
+	}
+	var support = function(){
+		if(!window.HTMLAudioElement){
+			return false;
+		}else{
+			return true;
+		}
+	};
+
+
+	if(support()){
+		var audio = $id('audio');
+		var play = $id('play');
+		var stop = $id('stop');
+		var slide = $id('slide');
+		var dot = $id('dot');
+
+		console.log(audio);
+		console.log(window.HTMLAudioElement);
+		var slideW = 300;
+		var dotW = 16;
+		dot.style.left = slideW - dotW + 'px';
+
+		var filePath = 'audio/海阔天空.mp3';
+
+		audio.loop = true;
+
+		// 播放
+		var p = function(){
+			
+			if(audio.muted){
+				dot.style.left = 0 + 'px';
+			}else{
+				dot.style.left = slideW-dotW + 'px';
+			}
+			if(audio.paused){
+				// 如果延长指定src的话，会在播放前有较长的等待
+				if(audio.src.length<=0){
+					audio.src = filePath;
+				}
+
+				audio.play();
+			}else{
+				audio.pause();
+			}
+		}
+		play.onclick = p;
+
+		console.log(audio.ended);
+
+		
+
+
+
+		// 是否静音
+		// muted用于设置静音
+		stop.onclick = function(){
+			audio.muted = !audio.muted;
+			if(audio.muted){
+				dot.style.left = 0 + 'px';
+			}else{
+				dot.style.left = slideW - dotW + 'px';
+			}
+		}
+
+		// 音量静止
+		// slide.className = 'green_all';
+		// console.log(audio.volume*slideW);
+		// audio.volume [0,1]
+		dot.onmousedown = function(e){
+			let sl = e.clientX - dot.offsetLeft;
+			slide.onmousemove = function(e){
+				let nl = e.clientX - sl;
+				nl = Math.max(nl,0);
+				nl = Math.min(nl,slide.offsetWidth-dot.offsetWidth);
+				dot.style.left = nl + 'px';
+				audio.volume = nl/slide.offsetWidth;
+			} 
+			dot.onmouseup = function(){
+				slide.onmousemove = null;
+				dot.onmousedown= null;
+			}
+		}
+
+		// 监听事件
+		audio.oncanplay = function(){
+			console.info('进入可播放状态,音频总长度:' + audio.duration);
+		}
+
+		audio.onplay = function(){
+			console.info('开始播放：' + audio.currentTime);
+		}
+
+		audio.onpause = function(){
+			console.info('暂停播放：' + audio.currentTime);
+		}
+
+		audio.onprogress = function(){
+			// console.info(audio.buffered);
+   //  		console.info('正在播放：' + audio.currentTime);
+		}
+
+		audio.ontimeupdate = function(){
+			// console.info('播放时间发生改变：'+audio.currentTime);
+		}
+	}
+	
+
+
+</script>	
+</body>
+</html>

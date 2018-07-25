@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.css">
+	<script>
+	var songs=[];
+    var curIndex=0;
+    function initSongs(res) {
+        songs=res.songs;
+    }
+	</script>
+	<!--下面是用JSONP的方式来来获取歌曲列表-->
+	<script src="http://api.asilu.com/163music/?type=playlist&id=545888750&callback=initSongs&_=1494217574015"></script>
+	<style>
+		canvas{
+			background: black;
+		}
+	</style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="300"></canvas>
+<br/>
+
+<button class='btn btn-primary' id='playBtn'>
+	播放
+</button>
+
+<script>
+	var id = function(id){
+		return document.getElementById(id);
+	}
+	// wands - 直到世界的尽头 - 世界が终わるまでは
+	var url = 'audio/Beyond - 不再犹豫.mp3';
+	var AudioContext = AudioContext || webkitAudioContext;
+	if(!window.AudioContext){
+		alert('不支持');
+	}else{
+		var context = new AudioContext();
+
+		var source = null;
+
+		// 使用ajax获取音频
+		var request = new XMLHttpRequest();
+
+		request.open('GET',url,true);
+
+		request.responseType = 'arraybuffer';
+		// 配置数据返回类型
+		
+		// 加载完成
+		request.onload = function(){
+			var arraybuffer = request.response;
+			// decodeAudioData()
+			// 第一个参数要是arraybuffer类型的
+			// 第二个参数是一个接受成功的函数
+			// 第三个参数是一个接受失败的函数
+			// 这个可以用Promise对象的resolve()
+			// reject()函数
+			context.decodeAudioData(request.response,function(buffer){
+				console.log(request.response);
+				// arraybuffer类型
+				// 创建分析器
+				var analyser = context.createAnalyser();
+				console.log(analyser);
+				// console.log(analyser.fftSize);
+				// console.log(analyser.frequencyBinCount);//计数频率
+				// console.log(analyser.maxDecibels);//最大分贝
+				// console.log(analyser.minDecibels);//最小分贝
+				// analyser.maxDecibels = -60;//这个是用来调整条条的高度的
+				// analyser.minDecibels = -200;
+				// 这个minDecibels这个值不能比-100大，否则会报错
+				// 
+				// 27/5000  
+				// 平滑时间常数
+				// console.log(analyser.smoothingTimeConstant);
+				// analyser.smoothingTimeConstant = 1;//没有条形了
+				// analyser.smoothingTimeConstant = 0.8;//调整跳动的快慢的
+				// 
+				// console.log(analyser.numberOfInputs);
+				// // analyser.numberOfInputs = 2;不能被修改的
+				// console.log(analyser.numberOfInputs);
+				source = context.createBufferSource();
+
+				console.log(source);
+				//未加载前，buffer是null
+				// console.log(source.buffer.duration);
+				// source.loop = true;//设置循环播放
+
+				// 将source与分析器连接
+				source.connect(analyser);
+
+				// 将分析器与destination连接，这样才能形成到达扬声器的通路
+				
+				analyser.connect(context.destination);
+
+				console.log(buffer);
+
+				// 将解码后的buffer数据复制给source
+				source.buffer = buffer;
+
+				// 播放
+				source.start(0);
+
+				// 监听播放结束
+				// 好像会报错
+				// source.onended = function(){
+				// 	// 结束后重新播放
+				// 	setTimeout(function(){
+				// 		source.start(0);
+				// 	},2000)
+				// }
+
+				// 开始绘制频谱图
+				function drawSpectrum(){
+					var canvas = id('canvas');
+					var cwidth = canvas.width;
+					var cheight = canvas.height - 2;
+					// 减2的目的就是让条形往上移动2
+
+					var meterWidth = 10;//能量条的宽度
+					var gap = 2;//能量条的间距
+					var meterNum = Math.ceil(cwidth / (meterWidth + gap));//计算当前画布上能画多少条
+					// console.log(meterNum);
+					var ctx = canvas.getContext('2d');
+
+					var capHeight = 2;
+
+					// console.log(new Uint8Array());
+
+					var array = new Uint8Array(analyser.frequencyBinCount);
+
+					// console.log(analyser.frequencyBinCount);
+					analyser.getByteFrequencyData(array);//1024
+
+					// console.log(analyser.getByteFrequencyData(array));
+
+					// console.log(analyser.getByteFrequencyData);
+					// console.log(array.length);
+
+					var step = Math.round(array.length / meterNum);//计算从analyser中的采样步长
+					// console.log(step);
+
+
+					// 清除画布
+					ctx.clearRect(0,0,cwidth,cheight);
+
+					// 定义一个渐变样式用于画图
+					
+					var gradient = ctx.createLinearGradient(0,0,0,300);
+					gradient.addColorStop(1,'#0f0');
+					gradient.addColorStop(0.5,'#ff0');
+					gradient.addColorStop(0,'#f00');
+
+					ctx.fillStyle = gradient;
+
+					// 对心愿数组进行抽样遍历，画出每个频谱条
+					
+					for(var i=0;i<meterNum;i++){
+						var value = array[i*step];
+						// console.log(value);
+						// cheight-value+capHeight 是把高度反过来
+						// cheight-value
+						// value 是正向高度，不美观
+						ctx.fillRect(i*12/*频谱条的宽度+条间距*/,cheight-value+capHeight,meterWidth,cheight);
+					}
+					requestAnimationFrame(drawSpectrum);
+				}
+				requestAnimationFrame(drawSpectrum);
+			},function(e){
+				console.log(e);
+			})
+		}
+		request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		request.setRequestHeader('Access-Control-Allow-Origin','*');
+		request.send(null);
+
+		// 点击按钮暂停
+		id('playBtn').onclick = function(){
+			setTimeout(function(){
+				console.log(source);//没播放之前为null
+				source.stop();
+			},2000);
+		}
+
+	}
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+AudioAPI的大部分操作都是通过一个个连接的节点完成，这些节点需要连通，从声源节点到输出节点都必须保持通畅才能正常工作。就像在电路上连接一个个元件来完成不同的工作，最后连接到扬声器上
+
+最简单的路线就是从声源直接连接到输出节点：source → destination
+
+输出节点在AudioContext实例的destination上可以找到，而声源节点却很多，就像百川东到海，海只有一个，但是川可以有很多个MediaElementSource,MediaStreamSource,BufferSource,Oscillator,createScriptProcessor,这些都是声源节点，他们都是可以产生波的，并传输给下一个节点。所以要让AudioAPI发出声音，最简单的代码可以这么写
+
+
+
